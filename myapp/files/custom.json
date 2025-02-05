@@ -1,0 +1,14 @@
+{
+    "html_patterns": {
+        "Django": "django(?!.*wp-content)",
+        "Svelte": "svelte",
+        "Tailwind CSS": "tailwindcss",
+        "WordPress": "wp-content|wp-includes|<meta name=[\"']generator[\"'] content=[\"']WordPress"
+    },
+    "header_patterns": {
+        "Express.js": "express",
+        "Spring Boot": "springboot",
+        "FastAPI": "fastapi",
+        "WordPress": "wordpress"
+    }
+}

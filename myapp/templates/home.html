@@ -1,0 +1,144 @@
+<!DOCTYPE html> <!-- HTML दस्तऐवजाची सुरुवात -->
+<html lang="en"> <!-- HTML भाषा सेट करणे -->
+<head>
+    <meta charset="UTF-8"> <!-- कॅरेक्टर सेट सेट करणे -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- viewport सेट करणे -->
+    <title>XSS Scanner</title> <!-- पृष्ठाचे शीर्षक -->
+    {% load static %} <!-- Django टेम्पलेट टॅग लोड करणे -->
+    <link rel="stylesheet" href="{% static 'styles.css' %}"> <!-- CSS फाइल लोड करणे -->
+    <script src="{% static 'scripts.js' %}"></script> <!-- JavaScript फाइल लोड करणे -->
+</head>
+<body>
+    <h1>Common Vulnerability Scanner</h1> <!-- मुख्य शीर्षक -->
+
+    {% if messages %} <!-- जर संदेश असतील तर -->
+        <ul> <!-- unordered list सुरू -->
+        {% for message in messages %} <!-- प्रत्येक संदेशासाठी -->
+            <li class="{% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</li> <!-- संदेश प्रदर्शित करणे -->
+        {% endfor %} <!-- संदेश लूप समाप्त -->
+        </ul> <!-- unordered list समाप्त -->
+    {% endif %} <!-- संदेश तपासणी समाप्त -->
+            <li class="{% if message.tags %}{{ message.tags }}{% endif %}">{{ message|escape }}</li> <!-- संदेश प्रदर्शित करणे -->
+    <form method="post" action="{% url 'home' %}"> <!-- फॉर्म सुरू -->
+        {% csrf_token %} <!-- CSRF टोकन समाविष्ट करणे -->
+        <label for="url">Enter URL to scan:</label> <!-- URL इनपुटसाठी लेबल -->
+        <input type="text" name="url" id="url" required> <!-- URL इनपुट फील्ड -->
+        <button type="submit">Scan</button> <!-- सबमिट बटण -->
+    </form> <!-- फॉर्म समाप्त -->
+
+    <div style="display: flex; justify-content: space-between;"> <!-- दोन विभागांसाठी डिव्ह -->
+        <div style="width: 45%;"> <!-- पहिला विभाग -->
+            {% if results %} <!-- जर निकाल असतील तर -->
+                <h2>Scan Results for {{ url|escape }}</h2> <!-- स्कॅन निकाल शीर्षक -->
+                <ul> <!-- unordered list सुरू -->
+                    <li><strong>Metadata:</strong> <!-- मेटाडेटा -->
+                        <ul> <!-- unordered list सुरू -->
+                            <li>Title: {{ results.Metadata.Title|default:"No title available" }}</li> <!-- शीर्षक -->
+                            <li>Description: {{ results.Metadata.Description|default:"No description" }}</li> <!-- वर्णन -->
+                            <li>Keywords: {{ results.Metadata.Keywords|default:"No keywords" }}</li> <!-- कीवर्ड्स -->
+                        </ul> <!-- unordered list समाप्त -->
+                    </li>
+                    <li><strong>Domain:</strong> {{ results.Domain|default:"No domain info available" }}</li> <!-- डोमेन -->
+                    <li><strong>IP:</strong> {{ results.IP|default:"No IP address found" }}</li> <!-- IP पत्ता -->
+                    <li><strong>Technology:</strong> {{ results.Technology|default:"No technology stack found" }}</li> <!-- तंत्रज्ञान -->
+                    <li><strong>SSL:</strong> {{ results.SSL|default:"No SSL certificate found" }}</li> <!-- SSL प्रमाणपत्र -->
+                    <li><strong>Performance:</strong> {{ results.Performance|default:"No performance metrics found" }}</li> <!-- कार्यक्षमता -->
+                    <li><strong>Content:</strong> {{ results.Content|default:"No content analysis found" }}</li> <!-- सामग्री -->
+                    <li><strong>Security:</strong> {{ results.Security|default:"No security features found" }}</li> <!-- सुरक्षा -->
+                    <li><strong>Geo:</strong> {{ results.Geo|default:"No geolocation found" }}</li> <!-- भूस्थान -->
+                    <li><strong>Robots:</strong> {{ results.Robots|default:"No robots.txt found" }}</li> <!-- robots.txt -->
+                    <li><strong>Sitemap:</strong> {{ results.Sitemap|default:"No sitemap.xml found" }}</li> <!-- sitemap.xml -->
+                    <li><strong>WordPress Detection:</strong> {{ results.WordPress|default:"No WordPress detected" }}</li> <!-- WordPress शोध -->
+                    <li><strong>Social:</strong> {{ results.Social|default:"No social media links found" }}</li> <!-- सामाजिक मीडिया लिंक -->
+                    <li><strong>Backlinks:</strong> {{ results.Backlinks|default:"No backlinks or authority found" }}</li> <!-- बॅकलिंक्स -->
+                </ul> <!-- unordered list समाप्त -->
+            {% endif %} <!-- निकाल तपासणी समाप्त -->
+        </div> <!-- पहिला विभाग समाप्त -->
+
+        <div style="width: 45%;"> <!-- दुसरा विभाग -->
+            {% if finder_results %} <!-- जर फाइंडर निकाल असतील तर -->
+            <h2>Finder Results</h2> <!-- फाइंडर निकाल शीर्षक -->
+
+            <h3>Valid Matches</h3> <!-- वैध जुळणी -->
+            <ul> <!-- unordered list सुरू -->
+                {% if finder_results.validmatches %} <!-- जर वैध जुळणी असतील तर -->
+                    {% for match, source in finder_results.validmatches %} <!-- प्रत्येक जुळणीसाठी -->
+                        <li>{{ match|escape }} (Found in: {{ source|escape }})</li> <!-- जुळणी प्रदर्शित करणे -->
+                    {% endfor %} <!-- जुळणी लूप समाप्त -->
+                {% else %} <!-- अन्यथा -->
+                    <li>No valid matches found.</li> <!-- कोणतीही वैध जुळणी आढळली नाही -->
+                {% endif %} <!-- वैध जुळणी तपासणी समाप्त -->
+            </ul> <!-- unordered list समाप्त -->
+            
+            <h3>Unvalidated Matches</h3> <!-- अवैध जुळणी -->
+            <ul> <!-- unordered list सुरू -->
+                {% if finder_results.unvalidatedmatches %} <!-- जर अवैध जुळणी असतील तर -->
+                    {% for match, source in finder_results.unvalidatedmatches %} <!-- प्रत्येक जुळणीसाठी -->
+                        <li>{{ match|escape }} (Found in: {{ source|escape }})</li> <!-- जुळणी प्रदर्शित करणे -->
+                    {% endfor %} <!-- जुळणी लूप समाप्त -->
+                {% else %} <!-- अन्यथा -->
+                    <li>No unvalidated matches found.</li> <!-- कोणतीही अवैध जुळणी आढळली नाही -->
+                {% endif %} <!-- अवैध जुळणी तपासणी समाप्त -->
+            </ul> <!-- unordered list समाप्त -->
+            
+            <h3>Authorization API</h3> <!-- अधिकृतता API -->
+<ul> <!-- unordered list सुरू -->
+    {% if finder_results.authorization_api %} <!-- जर अधिकृतता API असतील तर -->
+        {% for match, source in finder_results.authorization_api %} <!-- प्रत्येक जुळणीसाठी -->
+            <li>{{ match|escape }} (Found in: {{ source|escape }})</li> <!-- जुळणी प्रदर्शित करणे -->
+        {% endfor %} <!-- जुळणी लूप समाप्त -->
+    {% else %} <!-- अन्यथा -->
+        <li>No authorization API found.</li> <!-- कोणतीही अधिकृतता API आढळली नाही -->
+    {% endif %} <!-- अधिकृतता API तपासणी समाप्त -->
+</ul> <!-- unordered list समाप्त -->
+
+<h3>Possible Credentials</h3> <!-- संभाव्य क्रेडेन्शियल्स -->
+<ul> <!-- unordered list सुरू -->
+    {% if finder_results.possible_Creds %} <!-- जर संभाव्य क्रेडेन्शियल्स असतील तर -->
+        {% for match, source in finder_results.possible_Creds %} <!-- प्रत्येक जुळणीसाठी -->
+            <li>{{ match|escape }} (Found in: {{ source|escape }})</li> <!-- जुळणी प्रदर्शित करणे -->
+        {% endfor %} <!-- जुळणी लूप समाप्त -->
+    {% else %} <!-- अन्यथा -->
+        <li>No possible credentials found.</li> <!-- कोणतीही संभाव्य क्रेडेन्शियल्स आढळली नाही -->
+    {% endif %} <!-- संभाव्य क्रेडेन्शियल्स तपासणी समाप्त -->
+</ul> <!-- unordered list समाप्त -->
+
+<h3>Database Credentials</h3> <!-- डेटाबेस क्रेडेन्शियल्स -->
+<ul> <!-- unordered list सुरू -->
+    {% if finder_results.database_Creds %} <!-- जर डेटाबेस क्रेडेन्शियल्स असतील तर -->
+        {% for match, source in finder_results.database_Creds %} <!-- प्रत्येक जुळणीसाठी -->
+            <li>{{ match }} (Found in: {{ source }})</li> <!-- जुळणी प्रदर्शित करणे -->
+        {% endfor %} <!-- जुळणी लूप समाप्त -->
+    {% else %} <!-- अन्यथा -->
+        <li>No database credentials found.</li> <!-- कोणतीही डेटाबेस क्रेडेन्शियल्स आढळली नाही -->
+    {% endif %} <!-- डेटाबेस क्रेडेन्शियल्स तपासणी समाप्त -->
+</ul> <!-- unordered list समाप्त -->
+
+<h3>JWT Tokens</h3> <!-- JWT टोकन्स -->
+<ul> <!-- unordered list सुरू -->
+    {% if finder_results.jwt_Tokens %} <!-- जर JWT टोकन्स असतील तर -->
+        {% for match, source in finder_results.jwt_Tokens %} <!-- प्रत्येक जुळणीसाठी -->
+            <li>{{ match }} (Found in: {{ source }})</li> <!-- जुळणी प्रदर्शित करणे -->
+        {% endfor %} <!-- जुळणी लूप समाप्त -->
+    {% else %} <!-- अन्यथा -->
+        <li>No JWT tokens found.</li> <!-- कोणतेही JWT टोकन्स आढळले नाहीत -->
+    {% endif %} <!-- JWT टोकन्स तपासणी समाप्त -->
+</ul> <!-- unordered list समाप्त -->
+
+<h3>Hardcoded Passwords</h3> <!-- हार्डकोडेड पासवर्ड्स -->
+<ul> <!-- unordered list सुरू -->
+    {% if finder_results.hardcoded_Passwords %} <!-- जर हार्डकोडेड पासवर्ड्स असतील तर -->
+        {% for match, source in finder_results.hardcoded_Passwords %} <!-- प्रत्येक जुळणीसाठी -->
+            <li>{{ match }} (Found in: {{ source }})</li> <!-- जुळणी प्रदर्शित करणे -->
+        {% endfor %} <!-- जुळणी लूप समाप्त -->
+    {% else %} <!-- अन्यथा -->
+        <li>No hardcoded passwords found.</li> <!-- कोणतेही हार्डकोडेड पासवर्ड्स आढळले नाहीत -->
+    {% endif %} <!-- हार्डकोडेड पासवर्ड्स तपासणी समाप्त -->
+</ul> <!-- unordered list समाप्त -->
+
+            
+            {% endif %} <!-- फाइंडर निकाल तपासणी समाप्त -->
+        </div> <!-- दुसरा विभाग समाप्त -->
+    </div> <!-- डिव्ह समाप्त -->
+</body>
+</html> <!-- HTML दस्तऐवज समाप्त -->
