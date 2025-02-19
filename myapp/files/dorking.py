@@ -3,7 +3,7 @@ import logging
 import random
 import time
 from playwright.sync_api import sync_playwright
-from .dorks import Dorks
+from dorks import Dorks
 
 class DorkingTool:
     def __init__(self):
@@ -84,14 +84,19 @@ class DorkingTool:
                     # Wait for the first tab to complete
                     page = active_tabs.pop(0)
                     try:
-                        # Try multiple selectors with increased timeout
+                        # Try multiple selectors with 8 second timeout
                         try:
-                            page.wait_for_selector('div.g', timeout=6000)
+                            page.wait_for_selector('div.g', timeout=8000)
                         except:
                             try:
-                                page.wait_for_selector('div#search', timeout=50000)
+                                page.wait_for_selector('div#search', timeout=8000)
                             except:
-                                page.wait_for_selector('div#rso', timeout=5000)
+                                try:
+                                    page.wait_for_selector('div#rso', timeout=8000)
+                                except:
+                                    self.logger.warning("No results found within timeout, closing tab")
+                                    page.close()
+                                    continue
                     except Exception as e:
                         self.logger.warning(f"Error waiting for results: {str(e)}")
                         page.close()
@@ -145,24 +150,20 @@ class DorkingTool:
                     
                     new_page.keyboard.press("Enter")
                     
-                    # Wait for results with multiple selector options
+                    # Wait for results with 8 second timeout
                     try:
                         try:
-                            new_page.wait_for_selector('div.g', timeout=120000)
+                            new_page.wait_for_selector('div.g', timeout=8000)
                         except:
                             try:
-                                new_page.wait_for_selector('div#search', timeout=120000)
+                                new_page.wait_for_selector('div#search', timeout=8000)
                             except:
-                                new_page.wait_for_selector('div#rso', timeout=120000)
-                        
-                        # Check for "did not match any documents" message
-                        if new_page.query_selector("div#topstuff"):
-                            no_results_text = new_page.query_selector("div#topstuff").inner_text()
-                            if "did not match any documents" in no_results_text:
-                                self.logger.info(f"No results found for dork: {dork}")
-                                new_page.close()
-                                continue
-                        
+                                try:
+                                    new_page.wait_for_selector('div#rso', timeout=8000)
+                                except:
+                                    self.logger.warning("No results found within timeout, closing tab")
+                                    new_page.close()
+                                    continue
                         active_tabs.append(new_page)
                     except Exception as e:
                         self.logger.warning(f"Timeout waiting for results: {str(e)}")
@@ -178,13 +179,19 @@ class DorkingTool:
             while active_tabs:
                 page = active_tabs.pop(0)
                 try:
+                    # Wait for results with 8 second timeout
                     try:
-                        page.wait_for_selector('div.g', timeout=120000)
+                        page.wait_for_selector('div.g', timeout=8000)
                     except:
                         try:
-                            page.wait_for_selector('div#search', timeout=120000)
+                            page.wait_for_selector('div#search', timeout=8000)
                         except:
-                            page.wait_for_selector('div#rso', timeout=120000)
+                            try:
+                                page.wait_for_selector('div#rso', timeout=8000)
+                            except:
+                                self.logger.warning("No results found within timeout, closing tab")
+                                page.close()
+                                continue
                 except Exception as e:
                     self.logger.warning(f"Timeout waiting for results: {str(e)}")
                     page.close()
@@ -227,7 +234,7 @@ if __name__ == "__main__":
     dork_tool = DorkingTool()
     target_domain = input("Enter the domain to perform dorking on: ")
     print(f"Available dork types: {', '.join(dork_tool.dork_mapping.keys())}")
-    dork_type = input("Enter the dork type: ")
+    dork_type = input("Enter dork type (default: info): ") or "info"
     
     try:
         results = dork_tool.google_dork(target_domain, dork_type)
